@@ -19,7 +19,6 @@ def data_param_prepare(config_file):
     config.read(config_file)
 
     params = {}
-
     embedding_dim = config.getint('Model', 'embedding_dim')
     params['embedding_dim'] = embedding_dim
     ii_neighbor_num = config.getint('Model', 'ii_neighbor_num')
@@ -483,7 +482,9 @@ def test(model, test_loader, test_ground_truth_list, mask, topk, n_user):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('--config_file', type=str, help='config file path')
+    parser.add_argument('--config_file', default="/opt/ml/git/level2-movie-recommendation-level2-recsys-13/practice/T3058/UltraGCN/gowalla_config.ini", type=str, help='config file path')
+    #이부분은 default값을 바꾸시거나 python인자를 넣어주세요 debug를 위해 바꿨습니다.
+
     args = parser.parse_args()
 
     print('###################### UltraGCN ######################')
