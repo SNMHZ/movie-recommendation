@@ -10,7 +10,7 @@ import configparser
 import time
 import argparse
 from torch.utils.tensorboard import SummaryWriter
-from UltraGCN import UltraGCN
+from model import UltraGCN
 
 
 def data_param_prepare(config_file):
