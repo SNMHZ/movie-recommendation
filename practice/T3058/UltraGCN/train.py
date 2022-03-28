@@ -21,7 +21,7 @@ def train(model, optimizer, train_loader, test_loader, mask, test_ground_truth_l
     print('Total training batches = {}'.format(batches))
     
     if params['enable_tensorboard']:
-        writer = SummaryWriter()
+        writer = SummaryWriter(log_dir="./writer")
     
 
     for epoch in range(params['max_epoch']):
@@ -152,6 +152,7 @@ def test(model, test_loader, test_ground_truth_list, mask, topk, n_user):
     F1_score = 2 * (Precision * Recall) / (Precision + Recall)
 
     return F1_score, Precision, Recall, NDCG
+
 
 
 def Sampling(pos_train_data, item_num, neg_ratio, interacted_items, sampling_sift_pos):

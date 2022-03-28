@@ -10,6 +10,7 @@ import argparse
 from model import UltraGCN
 from utils import pload,pstore
 from train import train
+from inference import inference
 
 def data_param_prepare(config_file):
 
@@ -37,7 +38,7 @@ def data_param_prepare(config_file):
     train_file_path = config['Training']['train_file_path']
     gpu = config['Training']['gpu']
     params['gpu'] = gpu
-    device = torch.device('cuda:'+ params['gpu'] if torch.cuda.is_available() else "cpu")
+    device = torch.device('cuda')
     params['device'] = device
     lr = config.getfloat('Training', 'learning_rate')
     params['lr'] = lr
@@ -74,11 +75,13 @@ def data_param_prepare(config_file):
     params['topk'] = topk
 
     test_file_path = config['Testing']['test_file_path']
+    submission_file_path = config['Submission']['submission_file_path']
 
     # dataset processing
-    train_data, test_data, train_mat, user_num, item_num, constraint_mat = load_data(train_file_path, test_file_path)
+    train_data, test_data, submission_data, train_mat, user_num, item_num, constraint_mat = load_data(train_file_path, test_file_path, submission_file_path)
     train_loader = data.DataLoader(train_data, batch_size=batch_size, shuffle = True, num_workers=5)
     test_loader = data.DataLoader(list(range(user_num)), batch_size=test_batch_size, shuffle=False, num_workers=5)
+    submission_loader = data.DataLoader(list(range(user_num)), batch_size=test_batch_size, shuffle=False, num_workers=5)
 
     params['user_num'] = user_num
     params['item_num'] = item_num
@@ -109,7 +112,7 @@ def data_param_prepare(config_file):
         pstore(ii_neighbor_mat, ii_neigh_mat_path)
         pstore(ii_constraint_mat, ii_cons_mat_path)
 
-    return params, constraint_mat, ii_constraint_mat, ii_neighbor_mat, train_loader, test_loader, mask, test_ground_truth_list, interacted_items
+    return params, constraint_mat, ii_constraint_mat, ii_neighbor_mat, train_loader, test_loader, submission_loader, mask, test_ground_truth_list, interacted_items
 
 
 def get_ii_constraint_mat(train_mat, num_neighbors, ii_diagonal_zero = False):
@@ -140,11 +143,12 @@ def get_ii_constraint_mat(train_mat, num_neighbors, ii_diagonal_zero = False):
 
     
 
-def load_data(train_file, test_file):
+def load_data(train_file, test_file, submission_file):
     trainUniqueUsers, trainItem, trainUser = [], [], []
     testUniqueUsers, testItem, testUser = [], [], []
+    submissionUniqueUsers, submissionItem, submissionUser = [], [], []
     n_user, m_item = 0, 0
-    trainDataSize, testDataSize = 0, 0
+    trainDataSize, testDataSize, submissionDataSize = 0, 0, 0
     with open(train_file, 'r') as f:
         for l in f.readlines():
             if len(l) > 0:
@@ -180,9 +184,28 @@ def load_data(train_file, test_file):
                 n_user = max(n_user, uid)
                 testDataSize += len(items)
 
+    with open(submission_file) as f:
+        for l in f.readlines():
+            if len(l) > 0:
+                l = l.strip('\n').split(' ')
+                try:
+                    items = [int(i) for i in l[1:]]
+                except:
+                    items = []
+                uid = int(l[0])
+                submissionUniqueUsers.append(uid)
+                submissionUser.extend([uid] * len(items))
+                submissionItem.extend(items)
+                try:
+                    m_item = max(m_item, max(items))
+                except:
+                    m_item = m_item
+                n_user = max(n_user, uid)
+                submissionDataSize += len(items)
 
     train_data = []
     test_data = []
+    submission_data = []
 
     n_user += 1
     m_item += 1
@@ -191,6 +214,8 @@ def load_data(train_file, test_file):
         train_data.append([trainUser[i], trainItem[i]])
     for i in range(len(testUser)):
         test_data.append([testUser[i], testItem[i]])
+    for i in range(len(submissionUser)):
+        submission_data.append([submissionUser[i], submissionUser[i]])
     train_mat = sp.dok_matrix((n_user, m_item), dtype=np.float32)
 
     for x in train_data:
@@ -208,7 +233,7 @@ def load_data(train_file, test_file):
     constraint_mat = {"beta_uD": torch.from_numpy(beta_uD).reshape(-1),
                       "beta_iD": torch.from_numpy(beta_iD).reshape(-1)}
 
-    return train_data, test_data, train_mat, n_user, m_item, constraint_mat
+    return train_data, test_data, submission_data, train_mat, n_user, m_item, constraint_mat
 
 
 
@@ -244,8 +269,8 @@ def load_data(train_file, test_file):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('--config_file', default="/opt/ml/git/level2-movie-recommendation-level2-recsys-13/practice/T3058/UltraGCN/gowalla_config.ini", type=str, help='config file path')
-    #이부분은 default값을 바꾸시거나 python인자를 넣어주세요 debug를 위해 바꿨습니다. ./gowalla_config.ini
+    parser.add_argument('--config_file', default="/opt/ml/git/level2-movie-recommendation-level2-recsys-13/practice/T3058/UltraGCN/movie_rec.ini", type=str, help='config file path')
+    #이부분은 default값을 바꾸시거나 python인자를 넣어주세요 debug를 위해 바꿨습니다. ./movie_rec.ini
 
     args = parser.parse_args()
 
@@ -253,7 +278,7 @@ if __name__ == "__main__":
 
 
     print('1. Loading Configuration...')
-    params, constraint_mat, ii_constraint_mat, ii_neighbor_mat, train_loader, test_loader, mask, test_ground_truth_list, interacted_items = data_param_prepare(args.config_file)
+    params, constraint_mat, ii_constraint_mat, ii_neighbor_mat, train_loader, test_loader, submission_loader, mask, test_ground_truth_list, interacted_items = data_param_prepare(args.config_file)
     
     print('Load Configuration OK, show them below')
     print('Configuration:')
@@ -266,4 +291,5 @@ if __name__ == "__main__":
 
     train(ultragcn, optimizer, train_loader, test_loader, mask, test_ground_truth_list, interacted_items, params)
 
+    inference(ultragcn, submission_loader, mask, params['topk'])
     print('END')

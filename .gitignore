@@ -16,3 +16,7 @@ __pycache__
 .LSOverride
 
 output/
+data.tar.gz*
+*_*.csv
+data/
+._data
