@@ -7,7 +7,7 @@ from torch.utils.data import DataLoader, SequentialSampler
 from datasets import SASRecDataset
 from models import S3RecModel
 from trainers import FinetuneTrainer
-from utils import (
+from zzmab.utils import (
     check_path,
     generate_submission_file,
     get_item2attribute_json,
