@@ -38,7 +38,11 @@ def make_user_info_dict(train):
     data['datetime'] = pd.to_datetime(data['datetime'])
     data['year'] = data['datetime'].dt.year
 
-
+    path = '/opt/ml/input/data/train'
+    genres = pd.read_csv(os.path.join(path,'genres.tsv'), sep="\t")
+    genres = genres.groupby(['item']).agg({'genre':'unique'}).reset_index()
+    movie_genre_dict = dict([(u,list(g)) for u,g in genres.values])
+    
     # make user-genre dict
     user_movie_data = data.groupby(['user']).agg({'item':'unique'}).reset_index()
     user_movie_preference_ls = user_movie_data['item'].apply(lambda x :[j for i in x for j in movie_genre_dict[i]]).values
