@@ -39,7 +39,7 @@ user_group_dfs = list(raw_rating_df.groupby('user')['item'])
 first_row = True
 user_neg_dfs = pd.DataFrame()
 
-for u, u_items in tqdm(user_group_dfs):
+for u, u_items in tqdm(user_group_dfs, ascii=True):
     u_items = set(u_items)
     i_user_neg_item = np.random.choice(list(items - u_items), num_negative, replace=False)  # 관측 없는 데이터 중에서 num만큼 추출
     
@@ -161,8 +161,6 @@ with open('genre_col', 'rb') as f:
     genre_col = pickle.load(f)
 
 offsets = [0, n_user, n_user+n_item]  # [0, 31360, 38167]
-for col, offset in zip([user_col, item_col, genre_col], offsets): # [u, i, g] + [0, n_user, n_user + n_item]
-    col += offset
 
 # dataset, data loader 생성
 X = torch.cat([user_col.unsqueeze(1), item_col.unsqueeze(1), genre_col.unsqueeze(1)], dim=1)
@@ -191,7 +189,7 @@ embedding_dim = 200
 model = DeepFM(input_dims, embedding_dim, mlp_dims=[30, 20, 10]).to(device)
 MODEL_PATH = '/opt/ml/input/code/experiment/deep_fm'
 model.load_state_dict(torch.load(os.path.join(
-    MODEL_PATH, "deepFM_neg200_emb200_iter150_statedict.pt")))
+    MODEL_PATH, "deepFM_neg1000_emb200_iter150_statedict.pt")))
 
 ## inference
 print('inference started.')
@@ -208,7 +206,7 @@ dict_items = dict(map(reversed, items_dict.items()))
 dict_users = dict(map(reversed, users_dict.items()))
 
 # make matrix
-for x, y in inference_loader:
+for x, y in tqdm(inference_loader, ascii=True):
     model.eval()
     in_x = x.to(device)
     output = model(in_x)[1]
