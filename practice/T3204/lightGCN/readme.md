@@ -37,5 +37,5 @@ python inference.py
 ### 04.01
 1. epoch = 500
 2. learning_rate = 0.001
-3. LB score = 
+3. LB score = 0.1178
 
