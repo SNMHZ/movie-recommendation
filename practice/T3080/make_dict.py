@@ -32,7 +32,7 @@ def make_movie_info_dict():
 
     return movie_genre_dict, movie_year_dict
 
-def make_user_info_dict(train):
+def make_user_info_dict(train: pd.DataFrame):
     data = train.copy()
     data['datetime'] = data['time'].apply(lambda x: time.strftime('%Y-%m-%d', time.localtime(x)))
     data['datetime'] = pd.to_datetime(data['datetime'])
