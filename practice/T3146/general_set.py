@@ -15,10 +15,10 @@ raw_data = pd.read_csv(os.path.join(DATA_DIR, 'train_ratings.csv'), header=0)
 print("Loaded data with shape: {}".format(raw_data.shape))
 
 
-def generate_general_train_test_set(test_plays: pd.DataFrame, n_all=10, n_seq=2) -> Tuple[pd.DataFrame, pd.DataFrame]:
+def generate_general_train_test_set(raw_data: pd.DataFrame, n_all=10, n_seq=2) -> Tuple[pd.DataFrame, pd.DataFrame]:
     np.random.seed(SEED)
     trains, labels = [], []
-    for usr_id, tp in test_plays.groupby('user', as_index=False):
+    for usr_id, tp in raw_data.groupby('user', as_index=False):
         _n_all = min(tp.shape[0]//4, n_all)
         _n_seq = min(_n_all, n_seq)
         _n_static = _n_all - _n_seq
