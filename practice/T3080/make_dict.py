@@ -81,7 +81,8 @@ def make_user_info_dict(train: pd.DataFrame):
 
     # make user-year dict (user last view year + std)
     user_year_data = data.groupby(['user']).agg({'year':'unique'}).reset_index()
-    user_year_dict = dict([(u, max(y)+1) if len(y)==1 else(u, max(y)+round(np.std(y))) for u,y in user_year_data.values])
+    # user_year_dict = dict([(u, max(y)+1) if len(y)==1 else(u, max(y)+round(np.std(y))) for u,y in user_year_data.values])
+    user_year_dict = dict([(u, max(y)) for u,y in user_year_data.values])
 
     # make user-director dict
     user_director_preference_ls = user_movie_data['item'].apply(lambda x :[j for i in x if i in movie_director_dict for j in movie_director_dict[i]]).values
